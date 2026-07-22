@@ -1,36 +1,25 @@
-import { createInterface } from 'node:readline';
 import { recognizeIntent } from './conversation/intentRecognizer';
-import { Intent } from './conversation/type';
+import { getResponse } from './conversation/responseEngine';
+import { ConversationState } from './conversation/type';
 
-const rl = createInterface({
-    input: process.stdin,
-    output: process.stdout,
-});
+let currentState = ConversationState.INICIO;
 
-console.log('Joi iniciada!');
+function falar(texto: string) {
+  const intent = recognizeIntent(texto);
 
-function conversar() {
-    rl.question('Você: ', (texto: string) => {
-        const intent = recognizeIntent(texto);
+  console.log('Estado:', currentState);
+  console.log('Intent:', intent);
 
-        // Se a pessoa se despedir, encerra a conversa
-        if (intent === Intent.DESPEDIDA) {
-            console.log('Joi: Foi bom conversar com você. Até logo! 👋');
-            rl.close();
-            return;
-        }
+  const response = getResponse(currentState, intent);
 
-        console.log(`Joi: Reconheci -> ${intent}`);
+  console.log(`Você: ${texto}`);
+  console.log(`Joi: ${response.message}`);
 
-        conversar();
-    });
+  currentState = response.nextState;
 }
-conversar();
 
-/*import { recognizeIntent } from './conversation/intentRecognizer';
-
-const texto = 'qual seu nome';
-const intent = recognizeIntent(texto);
-
-console.log(`Texto: "${texto}"`);
-console.log(`Intenção reconhecida: ${intent}`);*/
+falar('oi');
+falar('não estou bem');
+falar('sim');
+falar('sim');
+falar('aconteceu uma coisa');

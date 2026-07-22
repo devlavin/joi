@@ -12,7 +12,7 @@ export enum Intent {
     NAO_ENTENDI = 'NAO_ENTENDI',
 }
 
-export enum conversationState {
+export enum ConversationState {
     INICIO = 'INICIO',
     PERGUNTOU_COMO_ESTA = 'PERGUNTOU_COMO_ESTA',
     PERGUNTOU_O_QUE_ACONTECEU = 'PERGUNTOU_O_QUE_ACONTECEU',
@@ -21,4 +21,9 @@ export enum conversationState {
     RESPEITOU_LIMITE = 'RESPEITOU_LIMITE',
     PERGUNTOU_SE_PRECISA_DE_AJUDA = 'PERGUNTOU_SE_PRECISA_DE_AJUDA',
     TENTANDO_AJUDAR = 'TENTANDO_AJUDAR',
+}
+
+export interface ConversationResponse {
+  message: string;
+  nextState: ConversationState;
 }

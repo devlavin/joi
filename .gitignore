@@ -33,3 +33,5 @@ Thumbs.db
 
 coverage/
 *.tsbuildinfo
+
+.prettierrc

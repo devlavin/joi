@@ -1,6 +1,7 @@
 import { Intent } from './type';
 
 export const keywordMap: Record<Intent, string[]> = {
+    [Intent.ABERTURA_EMOCIONAL]: ['aconteceu', 'aconteceram', 'aconteceu uma coisa'],
     [Intent.SAUDACAO]: [
         'oi',
         'olá',
@@ -14,25 +15,11 @@ export const keywordMap: Record<Intent, string[]> = {
         'oi joi',
         'olá joi',
     ],
-    [Intent.PERGUNTA_NOME]:[
+    [Intent.PERGUNTA_NOME]: [
         'qual seu nome',
         'como você chama',
         'como voce se chama',
         'quem é você',
-    ],
-    [Intent.ESTADO_POSITIVO]: [
-        'bem',
-        'estou bem',
-        'to bem',
-        'tô bem',
-        'muito bem',
-        'feliz',
-        'ótimo',
-        'ótima',
-        'tranquilo',
-        'tranquila',
-        'de boa',
-        'tudo certo',
     ],
     [Intent.ESTADO_NEGATIVO]: [
         'mal',
@@ -49,10 +36,24 @@ export const keywordMap: Record<Intent, string[]> = {
         'cansado',
         'cansada',
     ],
-    [Intent.ABERTURA_EMOCIONAL]: ['aconteceu', 'aconteceram'],
+    [Intent.ESTADO_POSITIVO]: [
+        'bem',
+        'estou bem',
+        'to bem',
+        'tô bem',
+        'muito bem',
+        'feliz',
+        'ótimo',
+        'ótima',
+        'tranquilo',
+        'tranquila',
+        'de boa',
+        'tudo certo',
+    ],
     [Intent.ACEITOU_CONVERSAR]: ['sim', 'quero', 'pode ser'],
     [Intent.RECUSOU_CONVERSAR]: [
         'não',
+        'nao',
         'não quero',
         'prefiro não',
         'deixa pra lá',
@@ -78,14 +79,30 @@ export const keywordMap: Record<Intent, string[]> = {
 };
 
 export function recognizeIntent(text: string) {
-    const lower = text.toLowerCase();
+    const lower = text
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
 
     for (const [intent, keywords] of Object.entries(keywordMap)) {
-        const encontrou = keywords.some((palavra) => lower.includes(palavra));
+        const encontrou = keywords.some((palavra) => {
+            const palavraNormalizada = palavra
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+
+            const resultado = lower.includes(palavraNormalizada);
+
+            if (resultado) {
+                console.log('Encontrou:', palavra, '=>', intent);
+            }
+
+            return resultado;
+        });
 
         if (encontrou) {
-            return intent as Intent; //type assertion
+            return intent as Intent;
         }
     }
+
     return Intent.NAO_ENTENDI;
 }
