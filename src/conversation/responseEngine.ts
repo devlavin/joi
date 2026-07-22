@@ -4,6 +4,13 @@ export function getResponse(
     state: ConversationState,
     intent: Intent,
 ): ConversationResponse {
+    if (intent === Intent.DESPEDIDA) {
+        return { message: 'Tchau!', nextState: ConversationState.INICIO };
+    }
+    if (intent === Intent.AGRADECIMENTO) {
+        return { message: 'Por nada, imagina.', nextState: state };
+    }
+
     const key = `${state}_${intent}`;
 
     switch (key) {
@@ -16,7 +23,7 @@ export function getResponse(
         case `${ConversationState.PERGUNTOU_COMO_ESTA}_${Intent.ESTADO_POSITIVO}`:
             return {
                 message: 'Que bom!',
-                nextState: ConversationState.CONVERSANDO,
+                nextState: ConversationState.INICIO,
             };
 
         case `${ConversationState.PERGUNTOU_COMO_ESTA}_${Intent.ESTADO_NEGATIVO}`:
@@ -46,17 +53,32 @@ export function getResponse(
 
         case `${ConversationState.PERGUNTOU_O_QUE_ACONTECEU}_${Intent.ABERTURA_EMOCIONAL}`:
             return {
-                message: 'Entendi... quer me contar o que aconteceu?',
+                message: 'Entendi... estou aqui, pode continuar.',
                 nextState: ConversationState.CONVERSANDO,
             };
-            
+
+        case `${ConversationState.PERGUNTOU_O_QUE_ACONTECEU}_${Intent.ESTADO_POSITIVO}`:
+            return {
+                message: 'Tudo bem então.',
+                nextState: ConversationState.INICIO,
+            };
+
         case `${ConversationState.OFERECEU_CONVERSA}_${Intent.RECUSOU_CONVERSAR}`:
             return {
                 message: 'Tudo bem. Estou aqui se precisar.',
                 nextState: ConversationState.RESPEITOU_LIMITE,
             };
 
+        case `${ConversationState.CONVERSANDO}_${Intent.ESTADO_POSITIVO}`:
+            return {
+                message: 'Que bom que deu tudo certo, viu...',
+                nextState: ConversationState.CONVERSANDO,
+            };
+
         default:
-            return { message: 'Não entendi muito bem...', nextState: state };
+            return {
+                message: 'Não entendi muito bem... pode repetir?',
+                nextState: state,
+            };
     }
 }

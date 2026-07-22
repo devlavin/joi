@@ -49,6 +49,7 @@ export const keywordMap: Record<Intent, string[]> = {
         'tranquila',
         'de boa',
         'tudo certo',
+        'já passou',
     ],
     [Intent.ACEITOU_CONVERSAR]: ['sim', 'quero', 'pode ser'],
     [Intent.RECUSOU_CONVERSAR]: [
@@ -74,6 +75,15 @@ export const keywordMap: Record<Intent, string[]> = {
         'fui',
         'tenho que ir',
         'até logo',
+    ],
+    [Intent.AGRADECIMENTO]: [
+        'obrigada',
+        'obrigado',
+        'brigada',
+        'brigado',
+        'obrg',
+        'valeu',
+        'obrigada pela ajuda',
     ],
     [Intent.NAO_ENTENDI]: [],
 };
