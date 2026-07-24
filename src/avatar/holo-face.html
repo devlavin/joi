@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="pt-br">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Joi — Holo Face</title>
+        <style>
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+                height: 100%;
+                width: 100%;
+                background: radial-gradient(
+                    ellipse at center,
+                    #04070c 0%,
+                    #000103 70%,
+                    #000000 100%
+                );
+                font-family: 'Courier New', monospace;
+            }
+            #canvas-wrap {
+                position: relative;
+                width: 100vw;
+                height: 100vh;
+            }
+            canvas {
+                display: block;
+            }
+
+            #hud {
+                position: absolute;
+                top: 22px;
+                left: 28px;
+                color: #7fe3ff;
+                opacity: 0.75;
+                font-size: 11px;
+                letter-spacing: 2px;
+                text-shadow: 0 0 6px rgba(127, 227, 255, 0.8);
+            }
+            #hud .line {
+                margin-bottom: 4px;
+            }
+            #hud .dim {
+                color: #3a6b78;
+            }
+
+            /* ---- Chat: mensagem da Joi ---- */
+            #joi-message {
+                position: absolute;
+                bottom: 120px;
+                left: 50%;
+                transform: translateX(-50%);
+                max-width: 560px;
+                text-align: center;
+                color: #bdf3ff;
+                font-size: 16px;
+                letter-spacing: 1px;
+                text-shadow: 0 0 10px rgba(127, 227, 255, 0.6);
+                min-height: 24px;
+                pointer-events: none;
+            }
+
+            /* ---- Chat: campo de entrada ---- */
+            #chat-ui {
+                position: absolute;
+                bottom: 36px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 8px;
+                width: min(520px, 86vw);
+            }
+            #chat-input {
+                flex: 1;
+                background: rgba(10, 20, 26, 0.55);
+                border: 1px solid rgba(127, 227, 255, 0.35);
+                color: #d7f6ff;
+                font-family: 'Courier New', monospace;
+                font-size: 14px;
+                padding: 10px 14px;
+                border-radius: 4px;
+                outline: none;
+                letter-spacing: 0.5px;
+            }
+            #chat-input::placeholder {
+                color: #4d7683;
+            }
+            #chat-input:focus {
+                border-color: #7fe3ff;
+                box-shadow: 0 0 12px rgba(127, 227, 255, 0.35);
+            }
+            #chat-send {
+                background: rgba(127, 227, 255, 0.12);
+                border: 1px solid rgba(127, 227, 255, 0.45);
+                color: #7fe3ff;
+                font-family: 'Courier New', monospace;
+                font-size: 13px;
+                letter-spacing: 1px;
+                padding: 0 18px;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            #chat-send:hover {
+                background: rgba(127, 227, 255, 0.22);
+            }
+            #chat-send:active {
+                transform: translateY(1px);
+            }
+        </style>
+    </head>
+    <body>
+        <div id="canvas-wrap">
+
+            <div id="joi-message"></div>
+
+            <div id="chat-ui">
+                <input
+                    id="chat-input"
+                    type="text"
+                    placeholder="Digite algo pra Joi..."
+                    autocomplete="off"
+                />
+                <button id="chat-send">ENVIAR</button>
+            </div>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        <script>
+            (function () {
+                const wrap = document.getElementById('canvas-wrap');
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(
+                    45,
+                    window.innerWidth / window.innerHeight,
+                    0.1,
+                    100,
+                );
+                camera.position.set(0, 0, 6.2);
+
+                const renderer = new THREE.WebGLRenderer({
+                    antialias: true,
+                    alpha: true,
+                });
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                wrap.insertBefore(renderer.domElement, wrap.firstChild);
+
+                const HOLO_CYAN = new THREE.Color(0x7fe3ff);
+
+                // ---------------------------------------------------------------
+                // Cabeça
+                // ---------------------------------------------------------------
+                const headGeo = new THREE.IcosahedronGeometry(1.55, 5);
+                const posAttr = headGeo.attributes.position;
+                const v = new THREE.Vector3();
+                for (let i = 0; i < posAttr.count; i++) {
+                    v.fromBufferAttribute(posAttr, i);
+                    let x = v.x,
+                        y = v.y,
+                        z = v.z;
+                    x *= 0.78;
+                    z *= 0.92;
+                    if (y < -0.3) {
+                        const chin = 1.0 - Math.min(1, (-y - 0.3) / 1.3) * 0.55;
+                        x *= chin;
+                        z *= chin;
+                    }
+                    if (z > 0) z *= 1.05;
+                    const n =
+                        Math.sin(x * 6 + y * 3) *
+                        Math.cos(z * 5 - y * 2) *
+                        0.02;
+                    posAttr.setXYZ(i, x + n, y * 1.12, z + n);
+                }
+                headGeo.computeVertexNormals();
+
+                const fresnelMat = new THREE.ShaderMaterial({
+                    uniforms: {
+                        uColor: { value: HOLO_CYAN },
+                        uTime: { value: 0 },
+                    },
+                    vertexShader: `
+      varying vec3 vNormal;
+      varying vec3 vViewDir;
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+        vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+        vViewDir = normalize(-mvPos.xyz);
+        gl_Position = projectionMatrix * mvPos;
+      }
+    `,
+                    fragmentShader: `
+      varying vec3 vNormal;
+      varying vec3 vViewDir;
+      uniform vec3 uColor;
+      uniform float uTime;
+      void main() {
+        float fresnel = pow(1.0 - max(dot(vNormal, vViewDir), 0.0), 2.6);
+        float flicker = 0.92 + 0.08 * sin(uTime * 14.0) * step(0.985, sin(uTime * 3.3 + 1.0));
+        gl_FragColor = vec4(uColor, fresnel * 0.85 * flicker);
+      }
+    `,
+                    transparent: true,
+                    blending: THREE.AdditiveBlending,
+                    side: THREE.FrontSide,
+                    depthWrite: false,
+                });
+                const headSolid = new THREE.Mesh(headGeo, fresnelMat);
+                
+                const wireGeo = new THREE.WireframeGeometry(headGeo);
+                const wireMat = new THREE.LineBasicMaterial({
+                    color: 0x9fe9ff,
+                    transparent: true,
+                    opacity: 0.22,
+                });
+                const headWire = new THREE.LineSegments(wireGeo, wireMat);
+               
+                // ---------------------------------------------------------------
+                // Boca (formato "D" deitado: topo reto, base curva)
+                // ---------------------------------------------------------------
+                const mouthMat = new THREE.MeshBasicMaterial({
+                    color: 0x9fe9ff,
+                    transparent: true,
+                    opacity: 0.85,
+                    blending: THREE.AdditiveBlending,
+                    side: THREE.DoubleSide,
+                });
+
+                let mouthMesh = null;
+                const mouthGroup = new THREE.Group();
+                mouthGroup.position.set(0, -0.85, 1.05);
+                
+                function buildMouthShape(openness) {
+                    const width = 0.4;
+                    const closedGap = 0.012;
+                    const maxCurve = 0.05 + openness * 0.16;
+
+                    const shape = new THREE.Shape();
+                    shape.moveTo(-width, 0);
+                    shape.quadraticCurveTo(0, closedGap * 0.4, width, 0);
+                    shape.quadraticCurveTo(
+                        width * 0.5,
+                        -maxCurve * 1.3,
+                        0,
+                        -maxCurve,
+                    );
+                    shape.quadraticCurveTo(
+                        -width * 0.5,
+                        -maxCurve * 1.3,
+                        -width,
+                        0,
+                    );
+                    return shape;
+                }
+
+                function updateMouth(openness) {
+                    if (mouthMesh) {
+                        mouthGroup.remove(mouthMesh);
+                        mouthMesh.geometry.dispose();
+                    }
+                    const shape = buildMouthShape(openness);
+                    const geo = new THREE.ShapeGeometry(shape, 24);
+                    mouthMesh = new THREE.Mesh(geo, mouthMat);
+                    mouthGroup.add(mouthMesh);
+                }
+
+                let mouthOpenness = 0;
+                updateMouth(0);
+
+                // ---------------------------------------------------------------
+                // Olhos — mesma técnica da boca (Shape + material holográfico),
+                // só que menores, ovais, e com blink periódico
+                // ---------------------------------------------------------------
+                const eyeMat = new THREE.MeshBasicMaterial({
+                    color: 0x9fe9ff,
+                    transparent: true,
+                    opacity: 0.9,
+                    blending: THREE.AdditiveBlending,
+                    side: THREE.DoubleSide,
+                });
+
+                function buildEyeShape() {
+                    const w = 0.15,
+                        h = 0.085;
+                    const shape = new THREE.Shape();
+                    shape.moveTo(-w, 0);
+                    shape.quadraticCurveTo(0, h, w, 0);
+                    shape.quadraticCurveTo(0, -h, -w, 0);
+                    return shape;
+                }
+
+                function createEye(x) {
+                    const geo = new THREE.ShapeGeometry(buildEyeShape(), 20);
+                    const mesh = new THREE.Mesh(geo, eyeMat);
+                    mesh.position.set(x, 0.34, 1.3);
+                    return mesh;
+                }
+
+                const eyeGroup = new THREE.Group();
+                const leftEye = createEye(-0.44);
+                const rightEye = createEye(0.44);
+                eyeGroup.add(leftEye, rightEye);
+                
+                const faceGroup = new THREE.Group();
+                faceGroup.add(headSolid, headWire, mouthGroup, eyeGroup);
+                faceGroup.position.y = 0.57; // sobe o rosto inteiro — ajuste esse valor a gosto
+                scene.add(faceGroup);
+
+                let blinkTimer = 2 + Math.random() * 3;
+                let blinking = false;
+
+                // ---------------------------------------------------------------
+                // Partículas ao redor
+                // ---------------------------------------------------------------
+                const PARTICLE_COUNT = 900;
+                const particleGeo = new THREE.BufferGeometry();
+                const positions = new Float32Array(PARTICLE_COUNT * 3);
+                for (let i = 0; i < PARTICLE_COUNT; i++) {
+                    const r = 2.6 + Math.random() * 2.4;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(Math.random() * 2 - 1);
+                    positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+                    positions[i * 3 + 1] = r * Math.cos(phi) * 0.8;
+                    positions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+                }
+                particleGeo.setAttribute(
+                    'position',
+                    new THREE.BufferAttribute(positions, 3),
+                );
+                const particleMat = new THREE.PointsMaterial({
+                    color: 0x7fe3ff,
+                    size: 0.018,
+                    transparent: true,
+                    opacity: 0.55,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                });
+                const particles = new THREE.Points(particleGeo, particleMat);
+                scene.add(particles);
+
+                scene.add(new THREE.AmbientLight(0x2a4a55, 1));
+
+                let targetRotY = 0,
+                    targetRotX = 0;
+                window.addEventListener('pointermove', (e) => {
+                    const nx = (e.clientX / window.innerWidth) * 2 - 1;
+                    const ny = (e.clientY / window.innerHeight) * 2 - 1;
+                    targetRotY = nx * 0.45;
+                    targetRotX = ny * 0.25;
+                });
+
+                const clock = new THREE.Clock();
+                let lastT = 0;
+
+                function onResize() {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                }
+                window.addEventListener('resize', onResize);
+
+                // ---------------------------------------------------------------
+                // Fala: a boca só se mexe enquanto isSpeaking estiver true.
+                // O "tempo de fala" é estimado pelo tamanho da mensagem — sem
+                // depender de áudio real (isso fica pra quando a Joi tiver voz).
+                // ---------------------------------------------------------------
+                let isSpeaking = false;
+                let speakStartTime = 0;
+                let speakDuration = 0;
+
+                function falarNaTela(mensagem) {
+                    isSpeaking = true;
+                    speakStartTime = clock.getElapsedTime();
+                    speakDuration = Math.min(
+                        4,
+                        Math.max(0.8, mensagem.length * 0.045),
+                    );
+                }
+
+                function animate() {
+                    requestAnimationFrame(animate);
+                    const t = clock.getElapsedTime();
+                    const delta = t - lastT;
+                    lastT = t;
+
+                    fresnelMat.uniforms.uTime.value = t;
+
+                    headSolid.rotation.y +=
+                        (targetRotY - headSolid.rotation.y) * 0.04;
+                    headSolid.rotation.x +=
+                        (targetRotX - headSolid.rotation.x) * 0.04;
+                    headSolid.rotation.y += Math.sin(t * 0.15) * 0.0006;
+                    headWire.rotation.copy(headSolid.rotation);
+
+                    particles.rotation.y = t * 0.02;
+                    particles.rotation.x = Math.sin(t * 0.05) * 0.05;
+
+                    // --- boca: só mexe enquanto isSpeaking ---
+                    if (isSpeaking) {
+                        const elapsed = t - speakStartTime;
+                        if (elapsed > speakDuration) {
+                            isSpeaking = false;
+                            mouthOpenness = 0;
+                        } else {
+                            mouthOpenness = Math.max(
+                                0,
+                                ((Math.sin(elapsed * 11) + 1) / 2) * 0.45,
+                            );
+                        }
+                    } else {
+                        mouthOpenness = 0;
+                    }
+                    updateMouth(mouthOpenness);
+                    mouthGroup.rotation.copy(headSolid.rotation);
+
+                    // --- olhos: piscar periódico ---
+                    blinkTimer -= delta;
+                    if (blinkTimer <= 0 && !blinking) {
+                        blinking = true;
+                        eyeGroup.scale.y = 0.08;
+                        setTimeout(() => {
+                            eyeGroup.scale.y = 1;
+                            blinking = false;
+                            blinkTimer = 2.5 + Math.random() * 3.5;
+                        }, 110);
+                    }
+                    eyeGroup.rotation.copy(headSolid.rotation);
+
+                    renderer.render(scene, camera);
+                }
+                animate();
+
+                // ---------------------------------------------------------------
+                // Chat: fala com o servidor (src/server.ts, porta 3001)
+                // ---------------------------------------------------------------
+                const SERVER_URL = 'http://localhost:3001/falar';
+                let currentState = 'INICIO';
+
+                const chatInput = document.getElementById('chat-input');
+                const chatSendBtn = document.getElementById('chat-send');
+                const joiMessageEl = document.getElementById('joi-message');
+
+                async function enviarMensagem() {
+                    const texto = chatInput.value.trim();
+                    if (!texto) return;
+                    chatInput.value = '';
+
+                    try {
+                        const resposta = await fetch(SERVER_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                texto,
+                                state: currentState,
+                            }),
+                        });
+                        const dados = await resposta.json();
+
+                        joiMessageEl.textContent = dados.message;
+                        currentState = dados.nextState;
+                        falarNaTela(dados.message);
+                    } catch (err) {
+                        joiMessageEl.textContent =
+                            'Não consegui falar com o servidor. Ele está rodando (npm run server)?';
+                        console.error(err);
+                    }
+                }
+
+                chatSendBtn.addEventListener('click', enviarMensagem);
+                chatInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') enviarMensagem();
+                });
+            })();
+        </script>
+    </body>
+</html>
