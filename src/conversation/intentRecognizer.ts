@@ -1,11 +1,11 @@
 import { Intent } from './type';
 
 export const keywordMap: Record<Intent, string[]> = {
-    [Intent.ABERTURA_EMOCIONAL]: ['aconteceu', 'aconteceram', 'aconteceu uma coisa'],
+    [Intent.ABERTURA_EMOCIONAL]: ['aconteceu', 'aconteceram', 'aconteceu uma coisa', 'alguns problemas'],
     [Intent.SAUDACAO]: [
         'oi',
+        'oii',
         'olá',
-        'ola',
         'e aí',
         'opa',
         'eai',
@@ -23,6 +23,7 @@ export const keywordMap: Record<Intent, string[]> = {
     ],
     [Intent.ESTADO_NEGATIVO]: [
         'mal',
+        'to mal',
         'triste',
         'péssimo',
         'péssima',
