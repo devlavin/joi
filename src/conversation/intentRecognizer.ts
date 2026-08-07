@@ -1,7 +1,12 @@
 import { Intent } from './type';
 
 export const keywordMap: Record<Intent, string[]> = {
-    [Intent.ABERTURA_EMOCIONAL]: ['aconteceu', 'aconteceram', 'aconteceu uma coisa', 'alguns problemas'],
+    [Intent.ABERTURA_EMOCIONAL]: [
+        'aconteceu',
+        'aconteceram',
+        'aconteceu uma coisa',
+        'alguns problemas',
+    ],
     [Intent.SAUDACAO]: [
         'oi',
         'oii',
@@ -21,9 +26,13 @@ export const keywordMap: Record<Intent, string[]> = {
         'como voce se chama',
         'quem é você',
     ],
+    [Intent.IDENTIDADE]: [
+        'o que você é',
+        'o que voce faz',
+        'o que voce pode fazer',
+    ],
     [Intent.ESTADO_NEGATIVO]: [
         'mal',
-        'to mal',
         'triste',
         'péssimo',
         'péssima',
@@ -32,7 +41,6 @@ export const keywordMap: Record<Intent, string[]> = {
         'não tô bem',
         'não to bem',
         'não estou bem',
-        'to mal',
         'tô mal',
         'cansado',
         'cansada',
@@ -52,6 +60,8 @@ export const keywordMap: Record<Intent, string[]> = {
         'tudo certo',
         'já passou',
     ],
+    [Intent.MOTIVACAO]: [],
+    [Intent.CONVERSA]: [],
     [Intent.ACEITOU_CONVERSAR]: ['sim', 'quero', 'pode ser'],
     [Intent.RECUSOU_CONVERSAR]: [
         'não',
@@ -89,19 +99,26 @@ export const keywordMap: Record<Intent, string[]> = {
     [Intent.NAO_ENTENDI]: [],
 };
 
-export function recognizeIntent(text: string) {
-    const lower = text
+function normalizar(texto: string): string {
+    return texto
         .toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '');
+}
+
+function contemPalavra(texto: string, palavra: string): boolean {
+    const escaped = palavra.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\b${escaped}\\b`, 'i');
+    return regex.test(texto);
+}
+
+export function recognizeIntent(text: string): Intent {
+    const lower = normalizar(text);
 
     for (const [intent, keywords] of Object.entries(keywordMap)) {
         const encontrou = keywords.some((palavra) => {
-            const palavraNormalizada = palavra
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '');
-
-            const resultado = lower.includes(palavraNormalizada);
+            const palavraNormalizada = normalizar(palavra);
+            const resultado = contemPalavra(lower, palavraNormalizada);
 
             if (resultado) {
                 console.log('Encontrou:', palavra, '=>', intent);
