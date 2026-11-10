@@ -25,14 +25,12 @@ export function getResponse(
 
     switch (key) {
 
-        // ===== INICIO =====
         case `${ConversationState.INICIO}_${Intent.SAUDACAO}`:
             return {
                 message: getRandomResponse(Intent.SAUDACAO),
                 nextState: ConversationState.PERGUNTOU_COMO_ESTA,
             };
 
-        // ===== PERGUNTOU_COMO_ESTA =====
         case `${ConversationState.PERGUNTOU_COMO_ESTA}_${Intent.ESTADO_POSITIVO}`:
             return {
                 message: getRandomResponse(Intent.ESTADO_POSITIVO),
@@ -45,7 +43,6 @@ export function getResponse(
                 nextState: ConversationState.PERGUNTOU_SE_PRECISA_DE_AJUDA,
             };
 
-        // ===== PERGUNTOU_SE_PRECISA_DE_AJUDA =====
         case `${ConversationState.PERGUNTOU_SE_PRECISA_DE_AJUDA}_${Intent.ACEITOU_CONVERSAR}`:
             return {
                 message: getRandomResponse(Intent.ACEITOU_CONVERSAR),
@@ -58,7 +55,6 @@ export function getResponse(
                 nextState: ConversationState.RESPEITOU_LIMITE,
             };
 
-        // ===== OFERECEU_CONVERSA =====
         case `${ConversationState.OFERECEU_CONVERSA}_${Intent.ACEITOU_CONVERSAR}`:
             return {
                 message: getRandomResponse(Intent.ACEITOU_CONVERSAR),
@@ -71,7 +67,6 @@ export function getResponse(
                 nextState: ConversationState.RESPEITOU_LIMITE,
             };
 
-        // ===== PERGUNTOU_O_QUE_ACONTECEU =====
         case `${ConversationState.PERGUNTOU_O_QUE_ACONTECEU}_${Intent.ABERTURA_EMOCIONAL}`:
             return {
                 message: getRandomResponse(Intent.ABERTURA_EMOCIONAL),
@@ -84,7 +79,6 @@ export function getResponse(
                 nextState: ConversationState.INICIO,
             };
 
-        // ===== CONVERSANDO =====
         case `${ConversationState.CONVERSANDO}_${Intent.ESTADO_POSITIVO}`:
             return {
                 message: getRandomResponse(Intent.ESTADO_POSITIVO),
